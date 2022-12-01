@@ -1,5 +1,6 @@
 '''
-TODO 1) FeatureExtractor
+TODO READ MOHAMMAD
+     1) FeatureExtractor
      2) load_data
      3) find probe hyperparameters (DO ON LINUX, GET GPU SET UP)
         layer_hyperparameters = []
