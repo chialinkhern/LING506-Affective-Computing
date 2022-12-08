@@ -27,9 +27,9 @@ class FeatureExtractor:
 
         for input_num, input in enumerate(self.sequence_of_input):
             encoded_input = self.tokenizer(input, return_tensors="pt").to(self.device)
-            output = self.model(**encoded_input, output_hidden_states=True)  #tuple of tensors, one for each layer https://huggingface.co/docs/transformers/main_classes/output
+            lm_output = self.model(**encoded_input, output_hidden_states=True)  #tuple of tensors, one for each layer https://huggingface.co/docs/transformers/main_classes/output
 
-            for layer_num, layer_output in enumerate(output.hidden_states[1:]):  # first is input embedding, no attn
+            for layer_num, layer_output in enumerate(lm_output.hidden_states[1:]):  # first is input embedding, no attn
                 # get embedding of final token of sequence
                 if layer_num in self.layers:
                     final_token_embedding = layer_output[0][-1]  # grabbing final token of input_num, layer_num
