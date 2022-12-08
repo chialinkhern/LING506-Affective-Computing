@@ -1,7 +1,7 @@
 '''
 Defines FeatureExtractor class and uses it to extract final word embeddings for each tweet, at each layer.
 '''
-
+import torch.cuda
 from transformers import GPT2TokenizerFast, GPT2Model
 import numpy as np
 from datasets import load_dataset
@@ -38,7 +38,7 @@ class FeatureExtractor:
         for layer_num in range(len(self.output)):
             np.savetxt("{}/layer_{}.csv".format(directory, layer_num), self.output[layer_num], delimiter=",")
 
-
+print("GPU Available: {}".format(torch.cuda.is_available()))
 tokenizer = GPT2TokenizerFast.from_pretrained('gpt2')
 model = GPT2Model.from_pretrained('gpt2')
 data = load_dataset("sem_eval_2018_task_1", "subtask5.english")
