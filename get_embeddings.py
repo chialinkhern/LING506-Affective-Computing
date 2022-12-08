@@ -60,3 +60,6 @@ for split in splits:
     feature_extractor.extract_features()
     feature_extractor.save_output("final_word_embeddings/{}".format(split))
 
+    # save labels
+    labels = np.asarray([data[split][emotion] for emotion in data[split].column_names[2:]], dtype=int).T
+    np.savetxt("tweet_labels/{}/labels.csv".format(split), labels[:5], delimiter=",")
