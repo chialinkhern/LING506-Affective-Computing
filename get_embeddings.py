@@ -1,5 +1,6 @@
 from transformers import GPT2TokenizerFast, GPT2Model
 import numpy as np
+from datasets import load_dataset
 
 
 class FeatureExtractor:
@@ -29,8 +30,9 @@ class FeatureExtractor:
 
 tokenizer = GPT2TokenizerFast.from_pretrained('gpt2')
 model = GPT2Model.from_pretrained('gpt2')
-text = ["Replace me by any text you'd like.", "You're done for today", "Don't forget your other responsibilities today."]
+data = load_dataset("sem_eval_2018_task_1", "subtask5.english")
+
 
 feature_extractor = FeatureExtractor(tokenizer, model, text)
 feature_extractor.extract_features()
-feature_extractor.save_output("out")
+feature_extractor.save_output("final_word_embeddings")
