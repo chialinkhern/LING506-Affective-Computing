@@ -48,18 +48,17 @@ class FeatureExtractor:
                 np.savetxt("{}/layer_{}.csv".format(directory, layer_num), self.output[layer_num], delimiter=",")
 
 print("GPU Available: {}".format(torch.cuda.is_available()))
-tokenizer = GPT2TokenizerFast.from_pretrained('gpt2')
-model = GPT2Model.from_pretrained('gpt2')
+tokenizer = GPT2TokenizerFast.from_pretrained('gpt2-large')
+model = GPT2Model.from_pretrained('gpt2-large')
 data = load_dataset("sem_eval_2018_task_1", "subtask5.english")
 splits = ["train", "test", "validation"]
-splits = ["test"]
 
 for split in splits:
-    list_of_tweets = data[split]["Tweet"][:5]
-    feature_extractor = FeatureExtractor(tokenizer, model, list_of_tweets, layers=[4,5,6])
+    list_of_tweets = data[split]["Tweet"]
+    feature_extractor = FeatureExtractor(tokenizer, model, list_of_tweets, layers=[21, 22, 23, 24, 25])
     feature_extractor.extract_features()
     feature_extractor.save_output("final_word_embeddings/{}".format(split))
 
     # save labels
     labels = np.asarray([data[split][emotion] for emotion in data[split].column_names[2:]], dtype=int).T
-    np.savetxt("tweet_labels/{}/labels.csv".format(split), labels[:5], delimiter=",")
+    np.savetxt("tweet_labels/{}/labels.csv".format(split), labels, delimiter=",")
