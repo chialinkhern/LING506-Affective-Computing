@@ -37,7 +37,7 @@ class FeatureExtractor:
                         self.output[layer_num][input_num] = final_token_embedding.detach().numpy()
                     else:
                         self.output[layer_num][input_num] = final_token_embedding.cpu().detach().numpy()
-                    print("Extracting input {}/{}".format(input_num+1, num_input), end="\r")
+                    print("Extracting embeddings from input {}/{}".format(input_num+1, num_input), end="\r")
 
 
     def save_output(self, directory):
