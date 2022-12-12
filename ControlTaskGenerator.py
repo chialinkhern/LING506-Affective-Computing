@@ -1,6 +1,6 @@
 '''
 Defines ControlTaskGenerator object that generates control behaviors per type, as per Hewitt & Liang (2019).
-Using transform() creates a control task.
+Using transform() creates a control task using defined control behaviors.
 '''
 
 import numpy as np
