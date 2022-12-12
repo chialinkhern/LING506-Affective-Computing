@@ -1,13 +1,10 @@
 '''
-Defines ControlTaskGenerator object that generates control behaviors per type, as per Hewitt & Liang (2019)
-Uses ControlTaskGenerator object to design and produce control task for Mohammad et al. (2018), subtask 5.
-Saves control tasks in appropriate train/val/test folders
+Defines ControlTaskGenerator object that generates control behaviors per type, as per Hewitt & Liang (2019).
+Using transform() creates a control task.
 '''
 
-from datasets import load_dataset
 import numpy as np
 import random
-from transformers import GPT2TokenizerFast
 
 
 class ControlTaskGenerator:
@@ -44,17 +41,4 @@ class ControlTaskGenerator:
             mutate_index = random.randint(0,10)
             control_behavior[0, mutate_index] = 1
         return control_behavior
-
-
-
-
-l = ["text of oaskdo", "instructor's name", "scan below for classroom documentation.", "oh oaskdo", "my name"]
-tokenizer = GPT2TokenizerFast.from_pretrained("gpt2-large")
-gen = ControlTaskGenerator(tokenizer=tokenizer)
-gen.fit(l)
-print(gen.transform(l[0:1]))
-print()
-print(gen.transform(l[0:2]))
-print()
-print(gen.transform(l[0:3]))
 
