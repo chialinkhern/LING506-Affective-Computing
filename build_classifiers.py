@@ -127,10 +127,10 @@ def train_classifier(config, checkpoint_dir=None, data_dir=None):
 
 
 config = {
-    "num_hidden": [1,2],
+    "num_hidden": [1, 2],
     "num_units": [50, 100, 400],
-    "lr": [],
-    "batch_size": []
+    "lr": tune.loguniform(1e-4, 1e-1),
+    "batch_size": tune.choice([2, 4, 8, 16])
 }
 
 data = EmbeddingDataset(labels_file="tweet_labels/test/labels.csv",
