@@ -127,24 +127,28 @@ def train_classifier(config, embeddings_layer, checkpoint_dir=None, embeddings_d
 
     print("Finished Training")
 
+def main():  # configure hyperparameter search space and run search
+    config = {
+        "num_hidden": tune.choice([1, 2]),
+        "num_units": tune.choice([200, 500, 700, 1000]),
+        "lr": tune.loguniform(1e-4, 1e-1),
+        "batch_size": tune.choice([2, 4, 8, 16, 32])
+    }
 
-config = {
-    "num_hidden": tune.choice([1, 2]),
-    "num_units": tune.choice([200, 500, 700, 1000]),
-    "lr": tune.loguniform(1e-4, 1e-1),
-    "batch_size": tune.choice([2, 4, 8, 16, 32])
-}
+    embeddings_dir = os.path.abspath("./final_word_embeddings/")
+    labels_dir = os.path.abspath("./tweet_labels/")
+    for layer_num in [21, 22, 23, 24, 25]:
+        result = tune.run(partial(train_classifier,
+                                  embeddings_dir=embeddings_dir,
+                                  labels_dir=labels_dir,
+                                  embeddings_layer=layer_num),
+                          config=config,
+                          resources_per_trial={"cpu":12, "gpu": 1},
+                          num_samples=30)
+        best_config = result.get_best_config("loss", "min", "last")
+        with open("best_classifier_configs/layer_{}.json".format(layer_num), "w") as outfile:
+            json.dump(best_config, outfile)
 
-embeddings_dir = os.path.abspath("./final_word_embeddings/")
-labels_dir = os.path.abspath("./tweet_labels/")
-for layer_num in [21, 22, 23, 24, 25]:
-    result = tune.run(partial(train_classifier,
-                              embeddings_dir=embeddings_dir,
-                              labels_dir=labels_dir,
-                              embeddings_layer=layer_num),
-                      config=config,
-                      resources_per_trial={"cpu":12, "gpu": 1},
-                      num_samples=30)
-    best_config = result.get_best_config("loss", "min", "last")
-    with open("best_classifier_configs/layer_{}.json".format(layer_num), "w") as outfile:
-        json.dump(best_config, outfile)
+
+if __name__ == "__main__":
+    main()
