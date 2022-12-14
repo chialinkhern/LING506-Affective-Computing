@@ -2,7 +2,8 @@
 **Runs on Python 3.9**
 
 Provides code to run selectivity analysis (Hewitt & Liang, 2019) on an affective categorization task 
-(Mohammad et al., 2018, subtask 5) using GPT2-large embeddings.
+(Mohammad et al., 2018, subtask 5) using GPT2-large embeddings. This project provides evidence that GPT2-large 
+embeddings contain affective information that is available to simple multi-layer perceptrons. 
 
 ### To run on your local machine
 Do **pip install -r requirements.txt**
