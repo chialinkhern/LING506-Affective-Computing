@@ -144,7 +144,7 @@ for layer_num in [21, 22, 23, 24, 25]:
                               embeddings_layer=layer_num),
                       config=config,
                       resources_per_trial={"cpu":12, "gpu": 1},
-                      num_samples=20)
+                      num_samples=30)
     best_config = result.get_best_config("loss", "min", "last")
     with open("best_classifier_configs/layer_{}.json".format(layer_num), "w") as outfile:
         json.dump(best_config, outfile)
