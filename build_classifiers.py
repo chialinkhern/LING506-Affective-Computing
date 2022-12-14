@@ -1,7 +1,6 @@
 '''
-hyperparameter tune for classifier
-    find best pars on train+val
-    store best pars
+Defines and uses objects and functions to find best MLP classifiers per GPT2-large embedding layer.
+Stores config for best models in best_classifier_configs
 '''
 import os
 import pandas as pd
@@ -9,9 +8,10 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 import torch.nn as nn
 import torch.optim as optim
-import torch.nn.functional as F
+from torchmetrics.classification import MulticlassF1Score
 from ray import tune
-
+from functools import partial
+import json
 
 class EmbeddingDataset(Dataset):  # custom dataset object for this project
     def __init__(self, labels_file, embeddings_file):
@@ -31,23 +31,23 @@ class Classifier(nn.Module):
     def __init__(self, num_hidden, num_units):
         super().__init__()
         self.model = nn.Sequential()
-        self.model.append(nn.Linear(768, num_units))
+        self.model.append(nn.Linear(1280, num_units))
         for i in range(num_hidden):
             self.model.append(nn.Linear(num_units, num_units))
             self.model.append(nn.ReLU())
         self.model.append(nn.Linear(num_units, 11))
-        # self.model.append(nn.LayerNorm(11))
 
     def forward(self, x):
-        logits = self.model(x)
-        return logits
+        for child in self.model.children():
+            x = child(x)
+        x = torch.sigmoid(x)
+        return x
 
 
-def train_classifier(config, checkpoint_dir=None, data_dir=None):
-    classifier = Classifier(config["num_hidden"], config["num_units"])
-
+def train_classifier(config, embeddings_layer, checkpoint_dir=None, embeddings_dir=None, labels_dir=None):
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
-    criterion = nn.CrossEntropyLoss()
+    classifier = Classifier(config["num_hidden"], config["num_units"]).to(device)
+    criterion = nn.BCELoss()
     optimizer = optim.SGD(classifier.parameters(), lr=config["lr"], momentum=0.9)
 
     if checkpoint_dir:
@@ -56,23 +56,19 @@ def train_classifier(config, checkpoint_dir=None, data_dir=None):
         classifier.load_state_dict(model_state)
         optimizer.load_state_dict(optimizer_state)
 
-    trainset = EmbeddingDataset(embeddings_file="final_word_embeddings/train/layer_21.csv",
-                                labels_file="tweet_labels/train/labels.csv")
-    valset = EmbeddingDataset(embeddings_file="final_word_embeddings/validation/layer_21.csv",
-                                labels_file="tweet_labels/validation/labels.csv")
-    testset = EmbeddingDataset(embeddings_file="final_word_embeddings/test/layer_21.csv",
-                                labels_file="tweet_labels/test/labels.csv")
+    trainset = EmbeddingDataset(embeddings_file=embeddings_dir+"/train/layer_{}.csv".format(embeddings_layer),
+                                labels_file=labels_dir+"/train/labels.csv")
+    valset = EmbeddingDataset(embeddings_file=embeddings_dir+"/validation/layer_{}.csv".format(embeddings_layer),
+                                labels_file=labels_dir+"/validation/labels.csv")
 
     trainloader = DataLoader(
         trainset,
         batch_size=int(config["batch_size"]),
-        shuffle=True,
-        num_workers=8)
+        shuffle=True)
     valloader = torch.utils.data.DataLoader(
         valset,
         batch_size=int(config["batch_size"]),
-        shuffle=True,
-        num_workers=8)
+        shuffle=True)
 
     for epoch in range(10):  # loop over the dataset multiple times
         running_loss = 0.0
@@ -100,52 +96,55 @@ def train_classifier(config, checkpoint_dir=None, data_dir=None):
                 running_loss = 0.0
 
         # Validation loss
+        metric = MulticlassF1Score(num_classes=11, average="micro")
+
         val_loss = 0.0
+        mult_f1 = 0.0
         val_steps = 0
-        total = 0
-        correct = 0
+
         for i, data in enumerate(valloader, 0):
             with torch.no_grad():
                 inputs, labels = data
                 inputs, labels = inputs.to(device), labels.to(device)
 
                 outputs = classifier(inputs)
-                _, predicted = torch.max(outputs.data, 1)
-                total += labels.size(0)
-                correct += (predicted == labels).sum().item()
+                predictions = (outputs>0.5).float()
+                # _, predicted = torch.max(outputs.data, 1)
+                # total += labels.size(0)
+                # correct += (predicted == labels).sum().item()
 
                 loss = criterion(outputs, labels)
                 val_loss += loss.cpu().numpy()
+                mult_f1 += float(metric(preds=predictions.cpu(), target=labels.cpu()))
                 val_steps += 1
 
         with tune.checkpoint_dir(epoch) as checkpoint_dir:
             path = os.path.join(checkpoint_dir, "checkpoint")
             torch.save((classifier.state_dict(), optimizer.state_dict()), path)
 
-        tune.report(loss=(val_loss / val_steps), accuracy=correct / total)
+        # tune.report(loss=(val_loss / val_steps), accuracy=correct / total)
+        tune.report(loss=(val_loss / val_steps), mult_f1=(mult_f1 / val_steps))
+
     print("Finished Training")
 
 
 config = {
-    "num_hidden": [1, 2],
-    "num_units": [50, 100, 400],
+    "num_hidden": tune.choice([1, 2]),
+    "num_units": tune.choice([200, 500, 700, 1000]),
     "lr": tune.loguniform(1e-4, 1e-1),
-    "batch_size": tune.choice([2, 4, 8, 16])
+    "batch_size": tune.choice([2, 4, 8, 16, 32])
 }
 
-data = EmbeddingDataset(labels_file="tweet_labels/test/labels.csv",
-                        embeddings_file="final_word_embeddings/test/layer_4.csv")
-
-loader = DataLoader(data, shuffle=True, batch_size=1)
-# print(next(iter(loader)))
-
-
-c = Classifier(num_hidden=3, num_units=50)
-embedding = data[0][0]
-print(c.forward(embedding))
-
-
-'''
-https://skimai.com/fine-tuning-bert-for-sentiment-analysis/
-https://stackoverflow.com/questions/44260217/hyperparameter-optimization-for-pytorch-model
-'''
+embeddings_dir = os.path.abspath("./final_word_embeddings/")
+labels_dir = os.path.abspath("./tweet_labels/")
+for layer_num in [21, 22, 23, 24, 25]:
+    result = tune.run(partial(train_classifier,
+                              embeddings_dir=embeddings_dir,
+                              labels_dir=labels_dir,
+                              embeddings_layer=layer_num),
+                      config=config,
+                      resources_per_trial={"cpu":12, "gpu": 1},
+                      num_samples=20)
+    best_config = result.get_best_config("loss", "min", "last")
+    with open("best_classifier_configs/layer_{}.json".format(layer_num), "w") as outfile:
+        json.dump(best_config, outfile)
