@@ -1,11 +1,10 @@
 # LING506-Affective-Computing
-**Runs on Python 3.9**
-
 Provides code to run selectivity analysis (Hewitt & Liang, 2019) on an affective categorization task 
 (Mohammad et al., 2018, subtask 5) using GPT2-large embeddings. This project provides evidence that GPT2-large 
 embeddings contain affective information that is available to simple multi-layer perceptrons. See [the written report](chia_report.pdf) for more information.
 
-### To run on your local machine
+##Runs on Python 3.9
+###To run on your local machine
 Do **pip install -r requirements.txt**
 
 Then, do the following in order (GPU is highly recommended and is used by code if available):
