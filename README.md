@@ -3,6 +3,8 @@ Provides code to run selectivity analysis (Hewitt & Liang, 2019) on an affective
 (Mohammad et al., 2018, subtask 5) using GPT2-large embeddings. This project provides evidence that GPT2-large 
 embeddings contain affective information that is available to simple multi-layer perceptrons. See [the written report](chia_report.pdf) for more information.
 
++ Hewitt, J., & Liang, P. (2019). Designing and Interpreting Probes with Control Tasks. Proceedings of the 2019 Conference of Empirical Methods in Natural Language Processing.
++ Mohammad, S., Bravo-Marquez, F., Salameh, M., & Kiritchenko, S. (2018, June). Semeval-2018 task 1: Affect in tweets. In Proceedings of the 12th international workshop on semantic evaluation (pp. 1-17).
 ## Runs on Python 3.9
 
 ### To run on your local machine
