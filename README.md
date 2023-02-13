@@ -14,3 +14,4 @@ Then, do the following in order (GPU is highly recommended and is used by code i
 3) Use run_selectivity_analysis.py. This will train two multi-linear perceptrons per GPT2-large layer (one classifier and one control classifier) using the optimized hyperparameters found in /best_classifier_configs. Then, the script tests the classifiers on the appropriate test sets. Results are then saved to working dir.
    * If you want to perform the hyperparameter search yourself, edit run build_classifiers.py, which will save configs of best-performing mlps per layer to /best_classifier_configs
 
+[embed] chia_report.pdf [embed]
